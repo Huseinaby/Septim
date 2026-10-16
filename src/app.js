@@ -1,5 +1,7 @@
-const express = require('express');
 require('dotenv').config();
+
+const express = require('express');
+const userRouter = require('./routes/users');
 
 const app = express();
 
@@ -12,6 +14,8 @@ app.get('/', (req, res) => {
     message: 'Archive API'
   });
 });
+
+app.use('/api/users', userRouter);
 
 
 
