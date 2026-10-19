@@ -17,7 +17,28 @@ router.post('/', async (req, res) => {
       !password
     ) {
       return res.status(400).json({
-        error: 'Invalid input. Please provide a valid username, email, and password.'
+        message: 'Invalid input. Please provide a valid username, email, and password.'
+      });
+    }
+
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({
+        message: 'Invalid email format.'
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long.'
+      });
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({
+        message: 'Password is too long. Maximum length is 72 characters.'
       });
     }
 
@@ -27,14 +48,38 @@ router.post('/', async (req, res) => {
       `INSERT INTO users (username, email, password)
       VALUES ($1, $2, $3)
       RETURNING id, username, email`,
-      [username, email, hashedPassword]
+      [normalizedUsername, normalizedEmail, hashedPassword]
     );
 
     res.status(201).json(result.rows[0]);
 
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({
+        message: 'Username or email already exists.'
+      });
+    }
     console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Error creating user' });
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, username, email, created_at
+      FROM users
+      ORDER BY created_at DESC`
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 });
 
