@@ -111,4 +111,64 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, email } = req.body;
+
+    if (
+      typeof username !== 'string' ||
+      typeof email !== 'string' ||
+      !username.trim() ||
+      !email.trim()
+    ) {
+      return res.status(400).json({
+        message: 'Invalid input. Please provide a valid username and email.'
+      });
+    }
+
+    if (username.trim().length > 100) {
+      return res.status(400).json({
+        message: 'Username is too long. Maximum length is 100 characters.'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({
+        message: 'Invalid email format.'
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE users
+      SET username = $1, email = $2
+      WHERE id  = $3
+      RETURNING id, username, email, created_at`,
+      [username.trim(), normalizedEmail, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: 'User not found.'
+      });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({
+        message: 'Username or email already exists.'
+      });
+    }
+
+    console.log('Error updating user:', error);
+
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+})
+
 module.exports = router;
