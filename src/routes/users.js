@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 
 const router = express.Router();
+const validateUserId = require('../middlewares/validateUserId');
 
 // Register a new user
 router.post('/', async (req, res) => {
@@ -85,7 +86,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateUserId, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -111,7 +112,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', validateUserId, async (req, res) => {
   try {
     const { id } = req.params;
     const { username, email } = req.body;
@@ -171,7 +172,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', validateUserId, async (req, res) => {
   try {
     const { id } = req.params;
 
