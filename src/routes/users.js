@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get all users
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
       `SELECT id, username, email, created_at
@@ -79,10 +79,7 @@ router.get('/', async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({
-      message: 'Internal server error'
-    });
+    next(error);
   }
 });
 

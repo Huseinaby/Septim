@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const userRouter = require('./routes/users');
+const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRouter);
 
-
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
