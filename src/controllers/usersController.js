@@ -1,0 +1,189 @@
+const pool = require('../config/db');
+const bcrypt = require('bcrypt');
+
+const createUser = async (req, res, next) => {
+  try {
+    const { username, email, password } = req.body;
+
+    if (
+      typeof username !== 'string' ||
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      !username.trim() ||
+      !email.trim() ||
+      !password
+    ) {
+      return res.status(400).json({
+        message: 'Invalid input. Please provide a valid username, email, and password.'
+      });
+    }
+
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({
+        message: 'Invalid email format.'
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long.'
+      });
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({
+        message: 'Password is too long. Maximum length is 72 characters.'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const result = await pool.query(
+      `INSERT INTO users (username, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, username, email`,
+      [normalizedUsername, normalizedEmail, hashedPassword]
+    );
+
+    res.status(201).json(result.rows[0]);
+
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({
+        message: 'Username or email already exists.'
+      });
+    }
+
+    next(error);
+  }
+}
+
+const getAllUsers = async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, username, email, created_at
+      FROM users
+      ORDER BY created_at DESC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT id, username, email, created_at
+      FROM users
+      WHERE id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: 'User not found.'
+      });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { username, email } = req.body;
+
+    if (
+      typeof username !== 'string' ||
+      typeof email !== 'string' ||
+      !username.trim() ||
+      !email.trim()
+    ) {
+      return res.status(400).json({
+        message: 'Invalid input. Please provide a valid username and email.'
+      });
+    }
+
+    if (username.trim().length > 100) {
+      return res.status(400).json({
+        message: 'Username is too long. Maximum length is 100 characters.'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({
+        message: 'Invalid email format.'
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE users
+      SET username = $1, email = $2
+      WHERE id  = $3
+      RETURNING id, username, email, created_at`,
+      [username.trim(), normalizedEmail, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: 'User not found.'
+      });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({
+        message: 'Username or email already exists.'
+      });
+    }
+
+    next(error);
+  }
+}
+
+const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `DELETE FROM users
+      WHERE id = $1
+      RETURNING id, username, email`,
+      [id]
+    );
+
+    if (result.rows.length == - 0) {
+      return res.status(404).json({
+        message: 'User not found.'
+      });
+    }
+
+    res.status(200).json({
+      message: 'User deleted successfully.',
+      user: result.rows[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  createUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser
+};
