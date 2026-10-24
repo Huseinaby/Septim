@@ -6,7 +6,7 @@ const router = express.Router();
 const validateUserId = require('../middlewares/validateUserId');
 
 // Register a new user
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
@@ -61,12 +61,12 @@ router.post('/', async (req, res) => {
         message: 'Username or email already exists.'
       });
     }
-    console.error('Error creating user:', error);
-    res.status(500).json({
-      message: 'Internal server error'
-    });
+
+    next(error);
   }
 });
+
+
 
 // Get all users
 router.get('/', async (req, res, next) => {
@@ -83,7 +83,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:id', validateUserId, async (req, res) => {
+
+
+// Get a user by ID
+router.get('/:id', validateUserId, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -102,14 +105,14 @@ router.get('/:id', validateUserId, async (req, res) => {
 
     res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error('error');
-    res.status(500).json({
-      message: 'Failed to retrieve user.'
-    })
+    next(error);
   }
 });
 
-router.put('/:id', validateUserId, async (req, res) => {
+
+
+// Update a user by ID
+router.put('/:id', validateUserId, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { username, email } = req.body;
@@ -161,15 +164,13 @@ router.put('/:id', validateUserId, async (req, res) => {
       });
     }
 
-    console.log('Error updating user:', error);
-
-    res.status(500).json({
-      message: 'Internal server error'
-    });
+    next(error);
   }
 });
 
-router.delete('/:id', validateUserId, async (req, res) => {
+
+// Delete a user by ID
+router.delete('/:id', validateUserId, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -191,10 +192,7 @@ router.delete('/:id', validateUserId, async (req, res) => {
       user: result.rows[0]
     });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({
-      message: 'Internal server error'
-    });
+    next(error);
   }
 })
 
