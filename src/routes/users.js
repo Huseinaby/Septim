@@ -1,4 +1,5 @@
 const express = require('express');
+const authenticateToken = require('../middlewares/authenticateToken');
 
 const {
   createUser,
@@ -10,6 +11,8 @@ const {
 
 const router = express.Router();
 const validateUserId = require('../middlewares/validateUserId');
+
+router.use(authenticateToken); // Apply authentication middleware to all routes in this router
 
 // Register a new user
 router.post('/', createUser);
