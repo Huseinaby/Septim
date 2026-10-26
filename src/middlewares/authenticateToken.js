@@ -12,11 +12,22 @@ module.exports = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = { id: decode.sub };
+    if (
+      typeof decoded.sub !== 'string' ||
+      !/^[0-9]+$/.test(decoded.sub)
+    ) {
+      return res.status(401).json({
+        message: 'Invalid token payload.'
+      });
+    }
 
-    next();
+    req.user = {
+      id: decoded.sub
+    };
+
+    return next();
   } catch (error) {
     return res.status(401).json({
       message: 'Invalid or expired token.'
