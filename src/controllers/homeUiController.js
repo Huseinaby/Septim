@@ -103,32 +103,35 @@ const updateHomeUi = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+}
 
-  const deleteHomeUi = async (req, res, next) => {
-    try {
-      const result = await pool.query(
-        `DELETE FROM home_ui WHERE id = $1`,
-        [req.params.id]
-      );
+const deleteHomeUi = async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM home_ui WHERE id = $1`,
+      [req.params.id]
+    );
 
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          message: 'Home UI entry not found.'
-        });
-      }
-
-      res.status(200).json({
-        message: 'Home UI entry deleted successfully.'
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: 'Home UI entry not found.'
       });
-    } catch (error) {
-      next(error);
     }
+
+    res.status(200).json({
+      message: 'Home UI entry deleted successfully.'
+    });
+  } catch (error) {
+    next(error);
   }
 }
+
 
 
 module.exports = {
   getAllHomeUi,
   getHomeUiById,
-  createHomeUi
+  createHomeUi,
+  updateHomeUi,
+  deleteHomeUi
 };
